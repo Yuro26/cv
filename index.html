@@ -4,10 +4,239 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yuriys Personal Site</title>
+    <style>
+        .sun-slider-container {
+            width: 300px;
+            height: 60px;
+            background: linear-gradient(90deg, 
+                #FFB74D 0%,    /* Morning orange */
+                #FFF176 25%,   /* Mid-morning yellow */
+                #81C784 50%,   /* Noon green */
+                #FF8A65 75%,   /* Evening orange */
+                #5C6BC0 100%   /* Night purple */
+            );
+            border-radius: 30px;
+            position: relative;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin: 20px auto;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sun-slider-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .sun-slider-track {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            border-radius: 30px;
+        }
+
+        .sun-button {
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, #FFD54F 0%, #FF8F00 100%);
+            border-radius: 50%;
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+        }
+
+        .sun-rays {
+            width: 30px;
+            height: 30px;
+            position: relative;
+        }
+
+        .sun-rays::before,
+        .sun-rays::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #FFD54F;
+            border-radius: 50%;
+            top: 5px;
+            left: 5px;
+        }
+
+        .sun-rays::before {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+
+        .time-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .moon-mode .sun-button {
+            background: radial-gradient(circle, #E8EAF6 0%, #5C6BC0 100%);
+        }
+
+        .moon-mode .sun-rays::before,
+        .moon-mode .sun-rays::after {
+            background: #E8EAF6;
+        }
+
+        .slider-wrapper {
+            text-align: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .slider-title {
+            font-family: 'Arial', sans-serif;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 
-
 <body>
+    <!-- Sunup to Sundown Slider -->
+    <div class="slider-wrapper">
+        <div class="slider-title">Day & Night Slider</div>
+        <div class="sun-slider-container" id="sunSlider">
+            <div class="sun-slider-track">
+                <div class="sun-button" id="sunButton">
+                    <div class="sun-rays"></div>
+                </div>
+            </div>
+        </div>
+        <div class="time-labels">
+            <span>🌅 Sunrise</span>
+            <span>☀️ Noon</span>
+            <span>🌅 Sunset</span>
+            <span>🌙 Night</span>
+        </div>
+    </div>
+
+    <script>
+        const slider = document.getElementById('sunSlider');
+        const sunButton = document.getElementById('sunButton');
+        let isDragging = false;
+        let startX = 0;
+        let currentX = 0;
+
+        // Calculate the maximum position the sun can travel
+        const maxPosition = slider.offsetWidth - sunButton.offsetWidth - 10; // 10px for padding
+
+        function updateSunPosition(position) {
+            // Clamp position between 5px and maxPosition + 5px
+            position = Math.max(5, Math.min(position, maxPosition + 5));
+            sunButton.style.left = position + 'px';
+            
+            // Calculate progress (0 to 1)
+            const progress = (position - 5) / maxPosition;
+            
+            // Update background based on progress
+            updateBackground(progress);
+            
+            // Update sun/moon appearance
+            if (progress > 0.8) {
+                slider.classList.add('moon-mode');
+            } else {
+                slider.classList.remove('moon-mode');
+            }
+        }
+
+        function updateBackground(progress) {
+            const colors = [
+                '#FFB74D', // Morning orange
+                '#FFF176', // Mid-morning yellow
+                '#81C784', // Noon green
+                '#FF8A65', // Evening orange
+                '#5C6BC0'  // Night purple
+            ];
+            
+            // Create smooth gradient based on progress
+            const gradientStops = colors.map((color, index) => {
+                const position = (index / (colors.length - 1)) * 100;
+                return `${color} ${position}%`;
+            }).join(', ');
+            
+            slider.style.background = `linear-gradient(90deg, ${gradientStops})`;
+        }
+
+        // Mouse events
+        sunButton.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - sunButton.offsetLeft;
+            sunButton.style.cursor = 'grabbing';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            currentX = e.clientX - slider.offsetLeft - startX;
+            updateSunPosition(currentX);
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            sunButton.style.cursor = 'pointer';
+        });
+
+        // Touch events for mobile
+        sunButton.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            const touch = e.touches[0];
+            startX = touch.clientX - sunButton.offsetLeft;
+            e.preventDefault();
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            
+            const touch = e.touches[0];
+            currentX = touch.clientX - slider.offsetLeft - startX;
+            updateSunPosition(currentX);
+            e.preventDefault();
+        });
+
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // Click anywhere on the slider to move sun
+        slider.addEventListener('click', (e) => {
+            if (e.target === sunButton || e.target.closest('.sun-button')) return;
+            
+            const rect = slider.getBoundingClientRect();
+            const clickX = e.clientX - rect.left - (sunButton.offsetWidth / 2);
+            updateSunPosition(clickX);
+        });
+
+        // Initialize
+        updateSunPosition(5);
+    </script>
+
   <table cellspacing="20"></table>
     <tr>
            <td><h1>Yuriy Narinyan</h1>
